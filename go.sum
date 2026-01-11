@@ -162,8 +162,8 @@ github.com/hashicorp/go-retryablehttp v0.7.7/go.mod h1:pkQpWZeYWskR+D1tR2O5OcBFO
 github.com/hashicorp/go-uuid v1.0.1/go.mod h1:6SBZvOh/SIDV7/2o3Jml5SYk/TvGqwFJ/bN7x4byOro=
 github.com/hashicorp/hcl v1.0.0 h1:0Anlzjpi4vEasTeNFn2mLJgTSwt0+6sfsiTG8qcWGx4=
 github.com/hashicorp/hcl v1.0.0/go.mod h1:E5yfLk+7swimpb2L/Alb/PJmXilQ/rhwaUYs4T20WEQ=
-github.com/iYashMaurya/wrangler/v3 v3.0.0-20251229090358-2a0ac2717b07 h1:p5G3hn9Of3XX6uTT8eCKyuCd2QG9Z+3ALbZ7ivH8TLM=
-github.com/iYashMaurya/wrangler/v3 v3.0.0-20251229090358-2a0ac2717b07/go.mod h1:2Vdo0eiot8ZAiwx83riIXO0NmslCwFCiMHxpKcyiM34=
+github.com/iYashMaurya/wrangler/v3 v3.0.0-20260111155633-72014ddd7f4b h1:orcAz3c0DGIMyH6Jy3FurLpdMGK7ADJaJanb3n4ggJo=
+github.com/iYashMaurya/wrangler/v3 v3.0.0-20260111155633-72014ddd7f4b/go.mod h1:e5BY+A3gvuWpyKpg87BKmG6eemUoP/CH8x6TD09OjLg=
 github.com/jmespath/go-jmespath v0.4.0 h1:BEgLn5cpjn8UN1mAw4NjwDrS35OdebyEtFe+9YPoQUg=
 github.com/jmespath/go-jmespath v0.4.0/go.mod h1:T8mJZnbsbmF+m6zOOFylbeCJqk5+pHWvzYPziyZiYoo=
 github.com/jmespath/go-jmespath/internal/testify v1.5.1 h1:shLQSRRSCCPj3f2gpwzGwWFoC7ycTf1rcQZHOlsJ6N8=
