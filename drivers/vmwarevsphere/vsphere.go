@@ -481,49 +481,73 @@ func (d *Driver) Remove() error {
 	}
 	if machineState == state.Running {
 		if d.GracefulShutdownTimeout > 0 {
-			// Try to initiate graceful shutdown, retrying until timeout
 			log.Infof("Gracefully shutting down VM %s (ID: %s)", d.MachineName, d.MachineId)
-			elapsed := 0
+
+			start := time.Now()
+			deadline := start.Add(time.Duration(d.GracefulShutdownTimeout) * time.Second)
+			sleep := time.Duration(gracefulShutdownSleep) * time.Second
+
 			gracefulShutdownInitiated := false
-			
-			// Keep trying to initiate graceful shutdown until timeout
-			for elapsed < d.GracefulShutdownTimeout {
-				if err := d.Stop(); err != nil {
-					log.Debugf("Failed to initiate graceful shutdown for VM %s (ID: %s): %v. Elapsed time: %d second(s)", d.MachineName, d.MachineId, err, elapsed)
-					time.Sleep(gracefulShutdownSleep * time.Second)
-					elapsed += gracefulShutdownSleep
-					continue
-				}
-				// Successfully initiated graceful shutdown
-				gracefulShutdownInitiated = true
-				log.Infof("Graceful shutdown initiated for VM %s (ID: %s). Elapsed time: %d second(s)", d.MachineName, d.MachineId, elapsed)
-				break
-			}
-			
-			// If graceful shutdown was initiated, wait for it to complete within remaining timeout
-			if gracefulShutdownInitiated {
-				for elapsed < d.GracefulShutdownTimeout {
-					if machineState, err = d.GetState(); err != nil {
-						return err
-					}
-					if machineState == state.Stopped {
-						log.Infof("VM %s (ID: %s) stopped gracefully after %d second(s)", d.MachineName, d.MachineId, elapsed)
-						break
-					}
-					time.Sleep(gracefulShutdownSleep * time.Second)
-					elapsed += gracefulShutdownSleep
-					log.Debugf("Waiting for VM %s (ID: %s) to stop. Elapsed time: %d second(s)", d.MachineName, d.MachineId, elapsed)
-				}
-			}
-			
-			if elapsed >= d.GracefulShutdownTimeout {
+
+			for time.Now().Before(deadline) {
+				// If we haven't initiated shutdown yet, keep trying.
 				if !gracefulShutdownInitiated {
-					log.Infof("Failed to initiate graceful shutdown for VM %s (ID: %s) within timeout of %d second(s)", d.MachineName, d.MachineId, d.GracefulShutdownTimeout)
+					if err := d.Stop(); err != nil {
+						log.Debugf(
+							"Failed to initiate graceful shutdown for VM %s (ID: %s): %v. Elapsed time: %d second(s)",
+							d.MachineName, d.MachineId, err, int(time.Since(start).Seconds()),
+						)
+					} else {
+						gracefulShutdownInitiated = true
+						log.Infof(
+							"Graceful shutdown initiated for VM %s (ID: %s). Elapsed time: %d second(s)",
+							d.MachineName, d.MachineId, int(time.Since(start).Seconds()),
+						)
+					}
+				}
+
+				// Always check state so we can exit early if it stopped (even if Stop() never succeeded).
+				if machineState, err = d.GetState(); err != nil {
+					return err
+				}
+				if machineState == state.Stopped {
+					if gracefulShutdownInitiated {
+						log.Infof(
+							"VM %s (ID: %s) stopped gracefully after %d second(s)",
+							d.MachineName, d.MachineId, int(time.Since(start).Seconds()),
+						)
+					}
+					break
+				}
+
+				log.Debugf(
+					"Waiting for VM %s (ID: %s) to stop. Elapsed time: %d second(s)",
+					d.MachineName, d.MachineId, int(time.Since(start).Seconds()),
+				)
+
+				// Sleep, but don't go past the deadline.
+				if rem := time.Until(deadline); rem < sleep {
+					time.Sleep(rem)
 				} else {
-					log.Infof("Timeout for graceful shutdown of VM %s (ID: %s) after %d second(s)", d.MachineName, d.MachineId, elapsed)
+					time.Sleep(sleep)
+				}
+			}
+
+			if machineState != state.Stopped {
+				if !gracefulShutdownInitiated {
+					log.Infof(
+						"Failed to initiate graceful shutdown for VM %s (ID: %s) within timeout of %d second(s)",
+						d.MachineName, d.MachineId, d.GracefulShutdownTimeout,
+					)
+				} else {
+					log.Infof(
+						"Timeout for graceful shutdown of VM %s (ID: %s) after %d second(s)",
+						d.MachineName, d.MachineId, int(time.Since(start).Seconds()),
+					)
 				}
 			}
 		}
+
 		if machineState, err = d.GetState(); err != nil {
 			return err
 		}
